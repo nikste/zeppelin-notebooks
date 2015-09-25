@@ -1,0 +1,103 @@
+{
+  "paragraphs": [
+    {
+      "text": "%flinkStreaming\n// for collect function\nimport org.apache.flink.contrib.streaming.scala.DataStreamUtils._\n\n// open datastream\nvar el \u003d env.socketTextStream(\"localhost\",9999)\n\n// collect stream element\nvar collected \u003d collect[String](el)\n",
+      "dateUpdated": "Sep 25, 2015 3:13:53 AM",
+      "config": {
+        "colWidth": 12.0,
+        "graph": {
+          "mode": "table",
+          "height": 300.0,
+          "optionOpen": false,
+          "keys": [],
+          "values": [],
+          "groups": [],
+          "scatter": {}
+        },
+        "editorMode": "ace/mode/scala"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1443170255580_834363471",
+      "id": "20150925-013735_1294192564",
+      "result": {
+        "code": "SUCCESS",
+        "type": "TEXT",
+        "msg": "import org.apache.flink.contrib.streaming.scala.DataStreamUtils._\nel: org.apache.flink.streaming.api.scala.DataStream[String] \u003d org.apache.flink.streaming.api.scala.DataStream@1d71d851\ncollected: java.util.Iterator[String] \u003d org.apache.flink.contrib.streaming.java.DataStreamIterator@42695db4\n"
+      },
+      "dateCreated": "Sep 25, 2015 1:37:35 AM",
+      "dateStarted": "Sep 25, 2015 3:12:34 AM",
+      "dateFinished": "Sep 25, 2015 3:12:47 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%flinkStreaming\n\n// print element from datastream\nif(collected.hasNext()){\n    var el \u003d collected.next()\n    println(\"nextElement:\" +el)\n}",
+      "dateUpdated": "Sep 25, 2015 3:13:53 AM",
+      "config": {
+        "colWidth": 12.0,
+        "graph": {
+          "mode": "table",
+          "height": 300.0,
+          "optionOpen": false,
+          "keys": [],
+          "values": [],
+          "groups": [],
+          "scatter": {}
+        },
+        "editorMode": "ace/mode/scala"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1443170742369_-1917687403",
+      "id": "20150925-014542_1758624048",
+      "result": {
+        "code": "SUCCESS",
+        "type": "TEXT",
+        "msg": "nextElement:a\n"
+      },
+      "dateCreated": "Sep 25, 2015 1:45:42 AM",
+      "dateStarted": "Sep 25, 2015 3:13:08 AM",
+      "dateFinished": "Sep 25, 2015 3:13:08 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "config": {},
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1443171528996_-8817294",
+      "id": "20150925-015848_522797869",
+      "dateCreated": "Sep 25, 2015 1:58:48 AM",
+      "status": "READY",
+      "progressUpdateIntervalMs": 500
+    }
+  ],
+  "name": "streaming",
+  "id": "2AZ97F6YH",
+  "angularObjects": {
+    "2B1ZC954H": [],
+    "2AY4HXDER": [],
+    "2B2ZXQSQF": [],
+    "2AZ1XJR7U": [],
+    "2B1FSJY6V": [],
+    "2AZFMBWJB": [],
+    "2AZDQR1RT": [],
+    "2B266W17X": [],
+    "2B2RG2KCF": [],
+    "2B2E6BEUC": [],
+    "2B15MMXPZ": [],
+    "2AZPM4JH7": [],
+    "2AYR9GJWD": [],
+    "2B1ZZJM8H": [],
+    "2AZBR3828": []
+  },
+  "config": {},
+  "info": {}
+}
