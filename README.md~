@@ -2,13 +2,13 @@
 for flink streaming
 
 # how to:
-use 
+1. use 
 ```
 $nc -lk 9999
 ```
-on linux to open new stream
+2. on linux to open new stream
 
-Execute the first part of the notebook
+3. Execute the first part of the notebook
 
-On every execution of the second part, the next stream element will be processed.
+4. On every execution of the second part, the next stream element will be processed.
 
