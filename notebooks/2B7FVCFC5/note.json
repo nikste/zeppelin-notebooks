@@ -1,0 +1,180 @@
+{
+  "paragraphs": [
+    {
+      "text": "%md\n## Twitter stream from file\nConsumes Twitter stream as string, extracts the locations in a flink job\nCollects the data into zeppelin and prints as table",
+      "dateUpdated": "Jun 8, 2016 2:50:12 PM",
+      "config": {
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "graph": {
+          "mode": "table",
+          "height": 300.0,
+          "optionOpen": false,
+          "keys": [],
+          "values": [],
+          "groups": [],
+          "scatter": {}
+        }
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1449148830732_238295671",
+      "id": "20151203-142030_734393747",
+      "result": {
+        "code": "SUCCESS",
+        "type": "HTML",
+        "msg": "\u003ch2\u003eTwitter stream from file\u003c/h2\u003e\n\u003cp\u003eConsumes Twitter stream as string, extracts the locations in a flink job\n\u003cbr  /\u003eCollects the data into zeppelin and prints as table\u003c/p\u003e\n"
+      },
+      "dateCreated": "Dec 3, 2015 2:20:30 PM",
+      "dateStarted": "Jun 7, 2016 8:48:35 PM",
+      "dateFinished": "Jun 7, 2016 8:48:36 PM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%flinkStreaming\nimport org.apache.flink.streaming.api.functions.co.CoFlatMapFunction\nimport org.apache.flink.api.scala._\n\nimport org.apache.flink.api.common.functions.{MapFunction, FlatMapFunction}\nimport org.apache.flink.streaming.api.environment.StreamExecutionEnvironment\nimport org.apache.flink.streaming.api.scala.{ConnectedStreams, DataStream}\nimport org.apache.flink.streaming.connectors.rabbitmq.RMQSource\nimport org.apache.flink.streaming.util.serialization.SimpleStringSchema\nimport org.apache.flink.util.Collector\nimport org.json.simple.parser.JSONParser\nimport org.json.simple.JSONObject\nimport org.json.simple.JSONArray\nimport org.apache.flink.contrib.streaming.scala.DataStreamUtils._\n\n\nimport org.apache.flink.contrib.streaming.java.DataStreamIterator\n// new buffer\nimport org.apache.flink.contrib.streaming.scala.DataStreamUtils.DataStreamBuffer\n\nvar data: DataStream[String] \u003d env.addSource(new RMQSource[String](\"localhost\", \"DATA\", new SimpleStringSchema)) //FLINK_DATA\n\n    val feedback_in: DataStream[String] \u003d env.addSource(new RMQSource[String](\"localhost\", \"mikeQueue\", new SimpleStringSchema))\n\n      val feedback: DataStream[JSONObject] \u003d feedback_in.map{\n        new MapFunction[String,JSONObject]{\n          override def map(t: String): JSONObject \u003d {\n            val parser: JSONParser \u003d new JSONParser\n            val elem \u003d parser.parse(t).asInstanceOf[JSONObject]\n            return(elem)\n          }\n        }\n      }\n\n    // downsample data:\n\n    var dataConnected: ConnectedStreams[String, JSONObject] \u003d data.connect(feedback);\n    val tablerows: DataStream[String] \u003d dataConnected.flatMap {\n      new CoFlatMapFunction[String, JSONObject, String] {\n\n        // downsample parameters\n        var passProbability: Double \u003d 1.0\n\n        // filter by attribute\n        var neLat: Double \u003d 1000.0\n        var neLng: Double \u003d -1000.0\n        var swLat: Double \u003d -1000.0\n        var swLng: Double \u003d 1000.0\n\n        override def flatMap2(elem: JSONObject, collector: Collector[String]): Unit \u003d {\n\n\n          val control \u003d elem.get(\"control\").asInstanceOf[JSONObject]\n\n          val bounds \u003d control.get(\"bounds\").asInstanceOf[JSONObject]\n\n          val northEast \u003d bounds.get(\"_northEast\").asInstanceOf[JSONObject]\n          val southWest \u003d bounds.get(\"_southWest\").asInstanceOf[JSONObject]\n\n          neLat \u003d northEast.get(\"lat\").asInstanceOf[Double]\n          neLng \u003d northEast.get(\"lng\").asInstanceOf[Double]\n\n          swLat \u003d southWest.get(\"lat\").asInstanceOf[Double]\n          swLng \u003d southWest.get(\"lng\").asInstanceOf[Double]\n\n          var items \u003d elem.get(\"num_items\").asInstanceOf[Integer]\n\n          println(\"got control message!\")\n          println(\"nelat:\"+ neLat + \"neLng:\" + neLng + \"swLat:\" + swLat + \"swLng:\" + swLng)\n        }\n\n        override def flatMap1(in: String, collector: Collector[String]): Unit \u003d {\n\n          val parser: JSONParser \u003d new JSONParser\n\n          val elem \u003d parser.parse(in).asInstanceOf[JSONObject]\n          var resString \u003d \"\"\n\n          var entities \u003d elem.get(\"entities\").asInstanceOf[JSONObject]\n          var hashtags \u003d entities.get(\"hashtags\").asInstanceOf[JSONArray]\n\n          if (hashtags.size() \u003e 0) {\n            val hashtag: JSONObject \u003d hashtags.get(0).asInstanceOf[JSONObject]\n            val hashtagtext: String \u003d hashtag.get(\"text\").asInstanceOf[String]\n            resString \u003d hashtagtext\n          } else {\n            resString \u003d \"hello\"\n          }\n\n          //fill location statistics\n          val coordinates \u003d elem.get(\"coordinates\").asInstanceOf[JSONObject]\n          if (coordinates !\u003d null) {\n            val coordinates1: JSONArray \u003d coordinates.get(\"coordinates\").asInstanceOf[JSONArray]\n\n            val lng: Double \u003d coordinates1.get(0).asInstanceOf[Double]\n            val lat: Double \u003d coordinates1.get(1).asInstanceOf[Double]\n\n            // if its inside of boundingbox:\n            if (lat \u003c neLat \u0026\u0026 lat \u003e swLat \u0026\u0026 lng \u003c neLng \u0026\u0026 lng \u003e swLng) {\n              println(\"collecting:\" + resString)\n              collector.collect(resString + \"\\t\" + lat + \"\\t\" + lng + \"\\n\")\n            }else{\n            }\n          }\n        }\n      }\n    }\n    \n\nvar buffer \u003d DataStreamBuffer[String](tablerows)",
+      "dateUpdated": "Jun 8, 2016 2:51:39 PM",
+      "config": {
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "graph": {
+          "mode": "table",
+          "height": 300.0,
+          "optionOpen": false,
+          "keys": [],
+          "values": [],
+          "groups": [],
+          "scatter": {}
+        },
+        "tableHide": false,
+        "editorHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1449148830732_238295671",
+      "id": "20151203-142030_1092331981",
+      "result": {
+        "code": "ERROR",
+        "type": "TEXT",
+        "msg": ""
+      },
+      "dateCreated": "Dec 3, 2015 2:20:30 PM",
+      "dateStarted": "Jun 8, 2016 1:29:35 PM",
+      "dateFinished": "Jun 8, 2016 1:29:36 PM",
+      "status": "ERROR",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%flinkStreaming\nimport java.util\n// */10 * * * * ?\n\nvar res: util.ArrayList[String] \u003d new util.ArrayList[String]()\nbuffer.pullElements(res)\n//print(res.size())\n\n\nvar tableString: String \u003d \"%table\\tname\\tother\\tlat\\tlng\"\nfor(el \u003c- 0 until res.size()){\n  print(\"\" + res.size() + \"\\t\" + res.get(el))\n}\n\n",
+      "dateUpdated": "Jun 8, 2016 2:50:57 PM",
+      "config": {
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "graph": {
+          "mode": "mapChart",
+          "height": 300.0,
+          "optionOpen": false,
+          "keys": [
+            {
+              "name": "name",
+              "index": 0.0,
+              "aggr": "sum"
+            }
+          ],
+          "values": [
+            {
+              "name": "other",
+              "index": 1.0,
+              "aggr": "sum"
+            }
+          ],
+          "groups": [],
+          "scatter": {
+            "xAxis": {
+              "name": "name",
+              "index": 0.0,
+              "aggr": "sum"
+            }
+          }
+        },
+        "editorHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1449148830733_237910922",
+      "id": "20151203-142030_39728398",
+      "result": {
+        "code": "ERROR",
+        "type": "TEXT",
+        "msg": ""
+      },
+      "dateCreated": "Dec 3, 2015 2:20:30 PM",
+      "dateStarted": "Jun 8, 2016 1:45:34 PM",
+      "dateFinished": "Jun 8, 2016 1:45:35 PM",
+      "status": "ERROR",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "",
+      "dateUpdated": "Jun 8, 2016 2:51:39 PM",
+      "config": {
+        "colWidth": 12.0,
+        "graph": {
+          "mode": "table",
+          "height": 300.0,
+          "optionOpen": false,
+          "keys": [],
+          "values": [],
+          "groups": [],
+          "scatter": {}
+        },
+        "editorMode": "ace/mode/scala",
+        "editorHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1449148830733_237910922",
+      "id": "20151203-142030_754686363",
+      "result": {
+        "code": "SUCCESS",
+        "type": "TEXT"
+      },
+      "dateCreated": "Dec 3, 2015 2:20:30 PM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    }
+  ],
+  "name": "I2 - visualization Demo",
+  "id": "2B7FVCFC5",
+  "angularObjects": {
+    "2BNMP58E7": [],
+    "2BP69WEPM": [],
+    "2BMUQV4BB": [],
+    "2BMH4CEA6": [],
+    "2BN1B85EG": [],
+    "2BNAE98M7": [],
+    "2BMZ5W7WW": [],
+    "2BM2M2E5B": [],
+    "2BN7WB8CN": [],
+    "2BMTNW5S6": [],
+    "2BNH1PT31": [],
+    "2BQG8HDPY": [],
+    "2BKYY7G72": [],
+    "2BM6VZF23": []
+  },
+  "config": {
+    "looknfeel": "default",
+    "cron": ""
+  },
+  "info": {}
+}
